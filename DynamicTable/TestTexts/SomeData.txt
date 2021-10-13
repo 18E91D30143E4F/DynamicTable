@@ -1,13 +1,1 @@
-#pragma once
-
-#define _CRT_SECURE_NO_WARNINGS
-
-#include <Windows.h>
-
-#ifndef FILEREADER_H
-#define FILEREADER_H
-
-void GetFileContent(LPCSTR fileName, TCHAR* buffer);
-void DeleteAllSpaces(char* strSrc);
-
-#endif /* FILEREADER_H */
+Sent to the focus window when the mouse wheel is rotated. The DefWindowProc function propagates the message to the window's parent. There should be no internal forwarding of the message, since DefWindowProc propagates it up the parent chain until it finds a window that processes it.

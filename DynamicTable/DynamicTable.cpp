@@ -220,11 +220,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	return TRUE;
 }
+HFONT appFont;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+
 	switch (message)
 	{
+	case WM_CREATE:
+	{
+		appFont = CreateFont(20, 0, 0, 0, 700, 1, 0, 0,
+			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+			DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, _T("Arial"));
+		break;
+	}
 	case WM_COMMAND:
 	{
 		int wmId = LOWORD(wParam);
@@ -258,6 +267,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
+		SelectObject(hdc, appFont);
 		OnPaint(hdc);
 		EndPaint(hWnd, &ps);
 	}
