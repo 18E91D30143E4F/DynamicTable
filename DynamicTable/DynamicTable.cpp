@@ -54,6 +54,14 @@ int GetColumnWidth(RECT clRect)
 	return clRect.right / COLUMN_COUNT;
 }
 
+VOID DrawHorizontalLine(HDC hdc, int y)
+{
+	Graphics graphics(hdc);
+	Pen  pen(Color(255, 0, 0, 255));
+
+	graphics.DrawLine(&pen, 0, y, clientRect.right, y);
+}
+
 VOID DrawHorizontalLines(HDC hdc, int sectionHeight)
 {
 	Graphics graphics(hdc);
@@ -78,24 +86,14 @@ int StrLenButFor(TCHAR* s)
 	return len;
 }
 
-int DrawTextOnDC(HDC hdc, int xStart, int yStart, int maxStrLen)
+//// Return text height
+int DrawTextOnDC(HDC hdc, TCHAR* str, int xStart, int yStart, int maxStrLen, int margin = 3)
 {
 	RECT rt;
-	SIZE size;
-	int margin = 3;
 
-	SetRect(&rt, 0, 0, maxStrLen - margin, clientRect.bottom);
+	SetRect(&rt, xStart + margin, yStart, maxStrLen + xStart - margin, clientRect.bottom);
 
-	HDC tempDC = CreateCompatibleDC(hdc);
-	// Return text height with transfer on dc
-	int fontHeight = DrawText(tempDC, str, StrLenButFor(str), &rt, DT_WORDBREAK);
-
-	SetRect(&rt, xStart + margin, yStart, maxStrLen + xStart - margin, fontHeight + yStart);
-	DrawText(hdc, str, StrLenButFor(str), &rt, DT_WORDBREAK);
-
-	DeleteDC(tempDC);
-
-	return fontHeight;
+	return DrawText(hdc, str, StrLenButFor(str), &rt, DT_WORDBREAK);
 }
 
 VOID DrawVerticalLines(HDC hdc)
@@ -110,22 +108,47 @@ VOID DrawVerticalLines(HDC hdc)
 	}
 }
 
+TCHAR days[5][100] = {
+	"First First First First First First First",
+	"Second Second Second Second Second Second",
+	"Third Third Third Third Third Third Third Third",
+	"Four Four Four Four Four Four Four Four Four Four",
+	"Last Last Last"
+};
 VOID OnPaint(HDC hdc)
 {
 	int sectionWidth = GetColumnWidth(clientRect);
 	DrawVerticalLines(hdc);
 
-	int sectionHeight = DrawTextOnDC(hdc, 0, 0, sectionWidth);
+	int sectionHeight = 0;
+	int maxTextHeight = 0, tempHeight;
 
-	for (int x = 0; x <= clientRect.right; x += sectionWidth)
+	for (int x = 0; x <= clientRect.bottom; x += sectionHeight)
 	{
-		for (int y = 0; y <= clientRect.bottom; y += sectionHeight)
+		for (int y = 0, i = 0; y <= clientRect.right; y += sectionWidth, i++)
 		{
-			DrawTextOnDC(hdc, x, y, sectionWidth);
+			tempHeight = DrawTextOnDC(hdc, days[i], y, x, sectionWidth);
+			if (tempHeight >= sectionHeight)
+			{
+				sectionHeight = tempHeight;
+			}
+			DrawHorizontalLine(hdc, x);
 		}
 	}
 
-	DrawHorizontalLines(hdc, sectionHeight);
+
+	//for (int x = 0, i = 0; x <= clientRect.right; x += sectionWidth, i++)
+	//{
+	//	for (int y = 0; y <= clientRect.bottom; y += sectionHeight)
+	//	{
+	//		tempHeight = DrawTextOnDC(hdc, days[i], x, y, sectionWidth);
+	//		if (tempHeight >= maxTextHeight)
+	//		{
+	//			maxTextHeight = tempHeight;
+	//		}
+	//		DrawHorizontalLine(hdc, y);
+	//	}
+	//}
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -183,6 +206,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbSize = sizeof(WNDCLASSEX);
 
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	//wcex.style = 0;
 	wcex.lpfnWndProc = WndProc;
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
@@ -224,12 +248,11 @@ HFONT appFont;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-
 	switch (message)
 	{
 	case WM_CREATE:
 	{
-		appFont = CreateFont(20, 0, 0, 0, 700, 1, 0, 0,
+		appFont = CreateFont(40, 0, 0, 0, 700, 1, 0, 0,
 			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 			DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, _T("Arial"));
 		break;
@@ -267,8 +290,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
+
+		//HDC hdcMem = CreateCompatibleDC(hdc);
+		//HBITMAP hbmMem = CreateCompatibleBitmap(hdc, clientRect.right, clientRect.bottom);
+		//HANDLE hOld = SelectObject(hdcMem, hbmMem);
+
 		SelectObject(hdc, appFont);
 		OnPaint(hdc);
+
+		//BitBlt(hdc, 0, 0, clientRect.right, clientRect.bottom, hdcMem, 0, 0, SRCCOPY);
+
+		//SelectObject(hdcMem, hOld);
+		//DeleteObject(hbmMem);
+		//DeleteDC(hdcMem);
+
 		EndPaint(hWnd, &ps);
 	}
 	break;
